@@ -5,8 +5,10 @@ import subprocess
 import schedule
 import time
 from os import getpid
+
 PASSWORD = "1229"
 AUTO_BACKUP = False
+AUTO_BACKUP_INTERVAL_HOUR = 24
 
 def createFolder(service,dbname,is_auto):
     dt = datetime.datetime.now()
@@ -28,6 +30,7 @@ def writePid(pid):
     file = open("pid.txt","w")
     file.write(str(pid))
     file.close()
+
 def readPid():
     file = open("pid.txt","r")
     pid = file.read()
@@ -43,13 +46,15 @@ def autoBackupOff():
     subprocess.call("kill %s"%(readPid()),shell=True)
 
 def autoBackup(services):
-    schedule.every().minute.do(backupAll, services)
+    schedule.every(AUTO_BACKUP_INTERVAL_HOUR).hour.do(backupAll, services)
 
     while True:
         schedule.run_pending()
-        time.sleep(15)
+        time.sleep(600)
 
-
+def help():
+    print("\nautoOn   Activate auto backup")
+    print("autoOff  Deactivate auto backup")
 if __name__ == '__main__':
     if ((len(sys.argv) == 2)):
         if sys.argv[1] == "autoOn":
@@ -63,10 +68,13 @@ if __name__ == '__main__':
             print(getpid())
             services = subprocess.run(["sudo", "-S", "docker", "ps", "--format", "\"{{.Names}}\""],stdout=subprocess.PIPE).stdout.splitlines()
             autoBackup(services)
+        else:
+            help()
+
 
 
     else:
-        pass
+        help()
 
     #backupAll(services)
     #autoBackup(services)
